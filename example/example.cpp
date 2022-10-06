@@ -29,13 +29,15 @@ int main(int argc, char* argv[]){
         // of pixels multiplied by 3, and so on.
         int n_samples = reader.get_n_samples(frame);
 
-        // Read this frame into a buffer, casting to 16-bit (in this case).
-        // Also supports 8-bit, 32-bit, float, double, and other types.
+        // Allocate memory for reading this frame
         std::unique_ptr<uint16_t[]> im(new uint16_t[n_samples]);
+
+        // Read this image into the buffer, casting to 16-bit (in this case).
+        // Also supports 8-bit, 32-bit, float, double, and other types.
         reader.read_frame<uint16_t>(frame, &im[0]);
     }
 
-    // Example 2: Get metadata for all of the image frames. In this trival
+    // Example 2: Get metadata for all of the image frames. In this trivial
     // example, we compute the total number of bits per uncompressed frame. 
     for(uint64_t frame=0; frame<n_frames; ++frame){
 

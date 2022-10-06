@@ -1,5 +1,5 @@
 # pitifful
-Standalone C++ header-only TIFF reader with limited functionality.
+Super simple C++ header-only TIFF reader with limited functionality.
 
 The purpose of this library is to provide an extremely simple, quick-and-dirty TIFF reader for
 various personal projects/experiments that do not merit inclusion of larger libraries.

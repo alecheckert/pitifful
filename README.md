@@ -11,7 +11,7 @@ We highly recommend other libraries (e.g. `libtiff`) if you're doing anything ot
 ## Functionality
  - Reads individual frames from uncompressed TIFFs.
  - Reads a small subset of all possible TIFF fields.
- - Supports images in various bit depths. 8-bit, 16-bit, and 32-bit images are interpreted as unsigned integers, while 64-bit images are interpreted as double-precision floating point. This allows it to read float images saved out by the Python `tifffile` library, for example.
+ - Supports images in various bit depths (8-bit, 16-bit, 32-bit, 64-bit, and so on)
 
 ## What this does not do
  - Does not handle tile-oriented layout (only strip-oriented layout)

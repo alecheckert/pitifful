@@ -406,11 +406,11 @@ public:
 
 
     /*
-     *  Method: get_n_pixels
-     *  --------------------
-     *  Return the total number of pixels in a single frame.
+     *  Method: get_n_samples
+     *  ---------------------
+     *  Return the total number of samples in a single frame.
     */
-    int get_n_pixels(int frame) const{
+    int get_n_samples(int frame) const{
         const IFD& ifd = ifds[frame];
         return ifd.height * ifd.width * ifd.samples_per_pixel;
     }
@@ -425,7 +425,7 @@ public:
      *  ----------
      *    T     :   type of the destination array
      *    frame :   index of the target frame (from 0 to n_frames-1)
-     *    out   :   allocated array of size *get_n_pixels(frame)*
+     *    out   :   allocated array of size *get_n_samples(frame)*
     */
     template <typename T>
     void read_frame(int frame, T* out){

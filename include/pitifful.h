@@ -7,7 +7,8 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include "portable_endian.h"
+#include <algorithm>
+// #include "portable_endian.h"
 
 namespace pitifful {
 

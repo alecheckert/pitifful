@@ -33,7 +33,7 @@ const uint16_t TIFF_FIELD_TYPE_SIZES[12] = {
  *  --------------------------------------------
  *  Returns true if this architecture is little-endian, false otherwise.
 */
-bool determine_if_host_is_little_endian(){
+inline bool determine_if_host_is_little_endian(){
     int n = 1;
     return *(char*)&n == 1;
 }
@@ -80,7 +80,7 @@ struct IFD {
  *  values are local if and only if they fit into 4 bytes
  *  (TIFF6 specification, page 15).
 */
-bool is_local_value(uint16_t field_type, uint16_t count){
+inline bool is_local_value(uint16_t field_type, uint16_t count){
     if((field_type<0) || (field_type>12)){
         return false;
     }
@@ -94,7 +94,7 @@ bool is_local_value(uint16_t field_type, uint16_t count){
  *  ----------------------
  *  Return true if a TIFF field has a type castable to uint.
 */
-bool is_uint_value(uint16_t field_type){
+inline bool is_uint_value(uint16_t field_type){
     return (
         (field_type==1) ||
         (field_type==2) ||
@@ -119,7 +119,7 @@ bool is_uint_value(uint16_t field_type){
  *    cast value
 */
 template <typename T>
-T parse_uint_field(uint16_t field_type, char* c){
+inline T parse_uint_field(uint16_t field_type, char* c){
     T x;
     switch(field_type){
         case 1:
@@ -160,7 +160,7 @@ template uint64_t parse_uint_field<uint64_t>(uint16_t field_type, char* c);
  *    cast value
 */
 template <typename T>
-T parse_int_field(uint16_t field_type, char* c){
+inline T parse_int_field(uint16_t field_type, char* c){
     T x;
     switch(field_type){
         case 1:
@@ -196,8 +196,8 @@ template int64_t parse_int_field<int64_t>(uint16_t field_type, char* c);
 
 
 /*
- *  Function: parse_array
- *  ---------------------
+ *  Function: _parse_array
+ *  ----------------------
  *  Parse multiple values of the same type from raw bytes into an output
  *  array.
  *
@@ -217,7 +217,7 @@ template int64_t parse_int_field<int64_t>(uint16_t field_type, char* c);
 */
 
 template <typename Tin, typename Tout>
-void _parse_array(
+inline void _parse_array(
     uint32_t count,
     bool host_be,
     bool file_be,
@@ -257,7 +257,7 @@ void _parse_array(
  *  type code (see TIFF_FIELD_TYPE_SIZES above).
 */
 template <typename T>
-void parse_array(
+inline void parse_array(
     uint16_t field_type,
     uint32_t count,
     bool host_be,

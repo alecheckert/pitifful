@@ -34,7 +34,7 @@ int main(int argc, char* argv[]){
 
         // Read this image into the buffer, casting to 16-bit (in this case).
         // Also supports 8-bit, 32-bit, float, double, and other types.
-        reader.read_frame<uint16_t>(frame, &im[0]);
+        reader.read_frame<uint16_t>(frame, im.get());
     }
 
     // Example 2: Get metadata for all of the image frames. In this trivial

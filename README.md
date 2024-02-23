@@ -12,11 +12,12 @@ We highly recommend other libraries (e.g. `libtiff`) if you're doing anything ot
  - Reads individual frames from uncompressed TIFFs.
  - Reads a small subset of all possible TIFF fields.
  - Supports images in various bit depths (8-bit, 16-bit, 32-bit, 64-bit, and so on)
+ - Supports DEFLATE compression.
 
 ## Nonfunctionality
  - Does not handle tile-oriented layout (only strip-oriented layout)
  - Does not handle BigTIFF (yet)
- - Does not handle compressed TIFFs
+ - Does not handle non-DEFLATE (e.g. LZW) compression
  - Does not recognize extra metadata present in specialized TIFFs (e.g. OME-TIFF)
  - Cannot write TIFFs
 

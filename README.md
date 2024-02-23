@@ -21,6 +21,10 @@ We highly recommend other libraries (e.g. `libtiff`) if you're doing anything ot
  - Does not recognize extra metadata present in specialized TIFFs (e.g. OME-TIFF)
  - Cannot write TIFFs
 
+## Dependencies
+
+The only dependency is `libz`.
+
 ## Example usage
 
 `example/example.cpp` provides an example of usage:

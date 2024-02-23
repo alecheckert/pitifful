@@ -17,13 +17,6 @@
 #  define SET_BINARY_MODE(file)
 #endif
 
-// #define CHUNK 16384
-// #define CHUNK 32768
-// #define CHUNK 65536
-// #define CHUNK 131072
-#define CHUNK 524288
-// #define CHUNK 1048576
-
 namespace pitifful {
 
 /* interpret and report exit values of zlib ops */
@@ -48,34 +41,48 @@ void zerr(int ret)
 }
 
 class DEFLATEDecompressor{
-    unsigned char inbuffer[CHUNK];
-    unsigned char outbuffer[CHUNK];
+    unsigned input_buffer_size;
+    unsigned char* inbuffer;
 public:
-    DEFLATEDecompressor(){}
-    ~DEFLATEDecompressor(){}
+    DEFLATEDecompressor(unsigned input_buffer_size):
+        input_buffer_size(input_buffer_size),
+        inbuffer(nullptr)
+    {
+        inbuffer = new unsigned char[input_buffer_size];
+    }
+    ~DEFLATEDecompressor(){
+        delete[] inbuffer;
+    }
     int decompress(
         std::ifstream& source,
         char* out,
-        int to_read,
+        unsigned to_read,
         unsigned& written,
         const unsigned max_out_buf_size
     ){
+        if(to_read>input_buffer_size){
+            throw std::runtime_error(
+                std::string("cannot read ")
+                + std::to_string(to_read)
+                + " bytes; input buffer size is "
+                + std::to_string(input_buffer_size)
+                + " bytes"
+            );
+        }
         int ret;
-        unsigned have;
         written = 0;
         z_stream strm;
         if(!source.is_open()){
             throw std::runtime_error("input stream not open");
         }
-        char* inptr = reinterpret_cast<char*>(&inbuffer[0]);
-        source.read(inptr, to_read);
+        source.read(reinterpret_cast<char*>(inbuffer), to_read);
 
         /* allocate inflate state */
         strm.zalloc = Z_NULL;
         strm.zfree = Z_NULL;
         strm.opaque = Z_NULL;
         strm.avail_in = 0;
-        strm.avail_in = static_cast<unsigned>(to_read);
+        strm.avail_in = to_read;
         strm.next_in = inbuffer;
         strm.avail_out = max_out_buf_size;
         strm.next_out = reinterpret_cast<unsigned char*>(out);

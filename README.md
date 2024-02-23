@@ -23,4 +23,34 @@ We highly recommend other libraries (e.g. `libtiff`) if you're doing anything ot
 
 ## Example usage
 
-See `example/example.cpp`.
+`example/example.cpp` provides an example of usage:
+```
+cd example
+make
+./example <PATH_TO_TIFF>
+```
+## Python bindings
+
+`pitifful` also provides Python bindings, mostly to facilitate
+comparison with `tifffile` (the gold-standard TIFF reading library
+in Python).
+
+To install the bindings, run `pip install -e .` from the
+same directory as this README.
+
+Example usage in Python:
+```
+from pitifful import TIFFReader
+
+reader = TIFFReader(path_to_tif)
+
+# Get the first image file directory
+ifd = reader.get_ifd(0)
+ifd.summary()
+
+# Read the first frame
+im = reader.read_frame_16bit(0)
+
+# Read the entire image stack (if multi-frame)
+stack = reader.read_stack_16bit()
+```

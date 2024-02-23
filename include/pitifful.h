@@ -1,3 +1,4 @@
+/* Main header file for pitiffful. */
 #ifndef _PITIFFUL_H
 #define _PITIFFUL_H
 

@@ -1,3 +1,4 @@
+/* zlib routines for DEFLATE-compressed TIFFs */
 #ifndef _PITIFFUL_DEFLATE_H
 #define _PITIFFUL_DEFLATE_H
 

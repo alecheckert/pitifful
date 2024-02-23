@@ -1,3 +1,4 @@
+/* Python bindings for pitifful */
 #include <iostream>
 #include <string>
 #include "pitifful.h"

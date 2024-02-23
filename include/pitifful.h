@@ -427,7 +427,15 @@ public:
     }
 
     /* Getters */
-    const IFD& get_ifd(int frame) const{return ifds[frame];}
+    const IFD& get_ifd(uint64_t frame) const{
+        if(frame>=n_frames){
+            throw std::runtime_error(
+                std::string("frame ") + std::to_string(frame)
+                + std::string(" out of bounds")
+            );
+        }
+        return ifds[frame];
+    }
     uint64_t get_n_frames() const{return n_frames;}
     uint64_t get_max_strip_size() const{return max_strip_size;}
 

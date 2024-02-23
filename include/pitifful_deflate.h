@@ -20,8 +20,8 @@
 // #define CHUNK 32768
 // #define CHUNK 65536
 // #define CHUNK 131072
-// #define CHUNK 524288
-#define CHUNK 1048576
+#define CHUNK 524288
+// #define CHUNK 1048576
 
 namespace pitifful {
 

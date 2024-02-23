@@ -482,7 +482,9 @@ public:
             }
             else if(ifd.compression==COMPRESSION_DEFLATE){
                 if(!deflate_decompressor){
-                    deflate_decompressor = new DEFLATEDecompressor;
+                    deflate_decompressor = new DEFLATEDecompressor(
+                        static_cast<unsigned>(max_strip_size)
+                    );
                 }
                 deflate_decompressor->decompress(
                     s,

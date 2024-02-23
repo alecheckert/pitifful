@@ -52,7 +52,7 @@ py::array_t<uint16_t> read_stack_16bit(pitifful::TIFFReader& reader)
     const int size = n_frames * height * width * samples_per_pixel;
     py::array_t<uint16_t> out(size);
     uint16_t* out_ptr = static_cast<uint16_t*>(out.request().ptr);
-    for(uint16_t frame=0; frame<n_frames; ++frame){
+    for(int frame=0; frame<n_frames; ++frame){
         const pitifful::IFD& ifd = reader.get_ifd(frame);
         if(
             (ifd.height!=height)
@@ -66,6 +66,43 @@ py::array_t<uint16_t> read_stack_16bit(pitifful::TIFFReader& reader)
             );
         }
         reader.read_frame<uint16_t>(
+            frame,
+            out_ptr + frame * height * width * samples_per_pixel
+        );
+    }
+    if(samples_per_pixel==1){
+        out.resize({n_frames, height, width});
+    } else{
+        out.resize({n_frames, height, width, samples_per_pixel});
+    }
+    return out;
+}
+
+py::array_t<uint8_t> read_stack_8bit(pitifful::TIFFReader& reader)
+{
+    const int n_frames = static_cast<int>(reader.get_n_frames());
+    const pitifful::IFD& ifd0 = reader.get_ifd(0);
+    const int height = ifd0.height;
+    const int width = ifd0.width;
+    const int samples_per_pixel = ifd0.samples_per_pixel;
+    const int bits_per_sample = ifd0.bits_per_sample;
+    const int size = n_frames * height * width * samples_per_pixel;
+    py::array_t<uint8_t> out(size);
+    uint8_t* out_ptr = static_cast<uint8_t*>(out.request().ptr);
+    for(int frame=0; frame<n_frames; ++frame){
+        const pitifful::IFD& ifd = reader.get_ifd(frame);
+        if(
+            (ifd.height!=height)
+            || (ifd.width!=width)
+            || (ifd.samples_per_pixel!=samples_per_pixel)
+            || (ifd.bits_per_sample!=bits_per_sample)
+        ){
+            throw std::runtime_error(
+                "read_stack_16bit only compatible with homogeneous " \
+                "image sizes"
+            );
+        }
+        reader.read_frame<uint8_t>(
             frame,
             out_ptr + frame * height * width * samples_per_pixel
         );
@@ -151,5 +188,6 @@ PYBIND11_MODULE(_pitifful, m)
         .def("get_n_samples", &pitifful::TIFFReader::get_n_samples)
         .def("read_frame_8bit", &read_frame_8bit)
         .def("read_frame_16bit", &read_frame_16bit)
+        .def("read_stack_8bit", &read_stack_8bit)
         .def("read_stack_16bit", &read_stack_16bit);
 }

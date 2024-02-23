@@ -8,9 +8,14 @@
 #include <type_traits>
 #include <vector>
 #include <algorithm>
-// #include "portable_endian.h"
+#include "portable_endian.h"
+#include "pitifful_deflate.h"
 
 namespace pitifful {
+
+/* Indicates no compression */
+static const int COMPRESSION_NONE = 1;
+static const int COMPRESSION_DEFLATE = 8;
 
 /* Sizes of each TIFF field type in bytes */
 const uint16_t TIFF_FIELD_TYPE_SIZES[12] = {
@@ -218,7 +223,7 @@ template int64_t parse_int_field<int64_t>(uint16_t field_type, char* c);
 
 template <typename Tin, typename Tout>
 inline void _parse_array(
-    uint32_t count,
+    unsigned count,
     bool host_be,
     bool file_be,
     char* in,
@@ -226,24 +231,26 @@ inline void _parse_array(
 ){
     Tin* ptr = reinterpret_cast<Tin*>(in);
     if(host_be==file_be){
-        for(uint32_t i=0; i<count; ++i){
+        for(unsigned i=0; i<count; ++i){
             out[i] = static_cast<Tout>(ptr[i]);
         }
     } else if((host_be) && (!file_be)){
         if(std::is_same<Tin, uint16_t>::value){
-            for(uint32_t i=0; i<count; ++i){
+            for(unsigned i=0; i<count; ++i){
                 out[i] = static_cast<Tout>(le16toh(ptr[i]));
             }
         } else if(std::is_same<Tin, uint32_t>::value){
-            for(uint32_t i=0; i<count; ++i){
+            for(unsigned i=0; i<count; ++i){
                 out[i] = static_cast<Tout>(le32toh(ptr[i]));
             }
         } else if(std::is_same<Tin, uint64_t>::value){
-            for(uint32_t i=0; i<count; ++i){
+            for(unsigned i=0; i<count; ++i){
                 out[i] = static_cast<Tout>(le64toh(ptr[i]));
             }
         } else{
-            throw std::runtime_error("can only parse uint16, uint32, or uint64 from LE to BE");
+            throw std::runtime_error(
+                "can only parse uint16, uint32, or uint64 from LE to BE"
+            );
         }
     } else if((!host_be) && (file_be)){
         ;
@@ -323,9 +330,16 @@ private:
     // Size of the largest strip in the file (in bytes)
     uint64_t max_strip_size;
 
+    // Size of the strip_buffer (below). This is the maximum
+    // number of bytes required to hold a single uncompressed
+    // strip in memory.
+    uint64_t strip_buffer_size;
+
     // Buffers for image file reading
     std::unique_ptr<char[]> ustrip_buffer;
     char* strip_buffer;
+
+    DEFLATEDecompressor* deflate_decompressor;
 
 public:
     TIFFReader(const char* path):
@@ -333,8 +347,10 @@ public:
         file_is_big_endian(false),
         n_frames(0),
         max_strip_size(0),
+        strip_buffer_size(0),
         ustrip_buffer(nullptr),
-        strip_buffer(nullptr)
+        strip_buffer(nullptr),
+        deflate_decompressor(nullptr)
     {
         s.open(path, std::ios::in | std::ios::binary);
         if(!s.is_open()){
@@ -389,7 +405,17 @@ public:
         uint64_t strip_size;
         for(uint64_t frame=0; frame<n_frames; ++frame){
             const IFD& ifd = ifds[frame];
-            strip_size = *std::max_element(ifd.strip_byte_counts.begin(), ifd.strip_byte_counts.end());
+            if(ifd.compression==COMPRESSION_DEFLATE){
+                strip_size = static_cast<uint64_t>(
+                    ifd.rows_per_strip*ifd.width*ifd.samples_per_pixel*(ifd.bits_per_sample/8)
+                );
+            }
+            else{
+                strip_size = *std::max_element(
+                    ifd.strip_byte_counts.begin(),
+                    ifd.strip_byte_counts.end()
+                );
+            }
             if(strip_size>max_strip_size){
                 max_strip_size = strip_size;
             }
@@ -435,13 +461,39 @@ public:
         // Total number of strips to read
         int n_strips = ifd.strip_offsets.size();
 
-        // Uncompressed
         for(int strip=0; strip<n_strips; ++strip){
+            // Go to this position in the file
             s.seekg(ifd.strip_offsets[strip], s.beg);
-            s.read(strip_buffer, ifd.strip_byte_counts[strip]);
+
+            // Read the raw bytes, decompressing if necessary
+            unsigned uncompressed_strip_size = 0;
+            if(ifd.compression==COMPRESSION_NONE){
+                s.read(strip_buffer, ifd.strip_byte_counts[strip]);
+                uncompressed_strip_size = ifd.strip_byte_counts[strip] * 8 / ifd.bits_per_sample;
+            }
+            else if(ifd.compression==COMPRESSION_DEFLATE){
+                if(!deflate_decompressor){
+                    deflate_decompressor = new DEFLATEDecompressor;
+                }
+                deflate_decompressor->decompress(
+                    s,
+                    strip_buffer,
+                    ifd.strip_byte_counts[strip],
+                    uncompressed_strip_size,
+                    static_cast<unsigned>(max_strip_size)
+                );
+            }
+            else{
+                throw std::runtime_error(
+                    std::string("unsupported compression type ")
+                    + std::to_string(ifd.compression)
+                );
+            }
+
+            // Decode
             if(ifd.bits_per_sample==8){
                 _parse_array<uint8_t, T>(
-                    ifd.strip_byte_counts[strip] * 8 / ifd.bits_per_sample,
+                    uncompressed_strip_size,
                     host_is_big_endian,
                     file_is_big_endian,
                     strip_buffer,
@@ -449,7 +501,7 @@ public:
                 );
             } else if(ifd.bits_per_sample==16){
                 _parse_array<uint16_t, T>(
-                    ifd.strip_byte_counts[strip] * 8 / ifd.bits_per_sample,
+                    uncompressed_strip_size,
                     host_is_big_endian,
                     file_is_big_endian,
                     strip_buffer,
@@ -457,7 +509,7 @@ public:
                 );
             } else if(ifd.bits_per_sample==32){
                  _parse_array<uint32_t, T>(
-                    ifd.strip_byte_counts[strip] * 8 / ifd.bits_per_sample,
+                    uncompressed_strip_size,
                     host_is_big_endian,
                     file_is_big_endian,
                     strip_buffer,
@@ -465,14 +517,14 @@ public:
                 );
             } else if(ifd.bits_per_sample==64){
                 _parse_array<double, T>(
-                    ifd.strip_byte_counts[strip] * 8 / ifd.bits_per_sample,
+                    uncompressed_strip_size,
                     host_is_big_endian,
                     file_is_big_endian,
                     strip_buffer,
                     out                   
                 );
             }
-
+            out += uncompressed_strip_size;
         }
     }
 
@@ -634,6 +686,7 @@ public:
         if(s.is_open()){
             s.close();
         }
+        delete deflate_decompressor;
     }
 }; // end TIFFReader
 

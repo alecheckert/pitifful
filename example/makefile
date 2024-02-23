@@ -1,10 +1,10 @@
 CC = g++
-FLAGS = -O2 -std=c++14
+CPPFLAGS = -O2 -lz -std=c++14
 
 all: example
 
 example:
-	$(CC) -o $@ $@.cpp -I../include $(FLAGS)
+	$(CC) -o $@ $@.cpp -I../include $(CPPFLAGS)
 
 clean:
 	rm -f example

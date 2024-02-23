@@ -20,24 +20,27 @@
 // #define CHUNK 32768
 // #define CHUNK 65536
 // #define CHUNK 131072
-#define CHUNK 524288
-// #define CHUNK 1048576
+// #define CHUNK 524288
+#define CHUNK 1048576
 
 namespace pitifful {
 
-class DEFLATEDecompresser{
+class DEFLATEDecompressor{
     unsigned char inbuffer[CHUNK];
     unsigned char outbuffer[CHUNK];
 public:
-    DEFLATEDecompresser(){}
-    ~DEFLATEDecompresser(){}
+    DEFLATEDecompressor(){}
+    ~DEFLATEDecompressor(){}
     int decompress(
         std::ifstream& source,
         char* out,
-        int to_read
+        int to_read,
+        unsigned& written,
+        const unsigned max_out_buf_size
     ){
         int ret;
         unsigned have;
+        written = 0;
         z_stream strm;
         if(!source.is_open()){
             throw std::runtime_error("input stream not open");
@@ -58,8 +61,6 @@ public:
         /* decompress until deflate streams ends or eof */
         do {
             int chunk_size = CHUNK < to_read ? CHUNK : to_read;
-            std::cout << "chunk_size = " << chunk_size << ", to_read = " << to_read << "\n";
-            std::cout << "reading " << chunk_size << " bytes into inptr\n";
             source.read(inptr, chunk_size);
             strm.avail_in = chunk_size;
             if(!source){
@@ -85,8 +86,20 @@ public:
                         return ret;
                 }
                 have = CHUNK - strm.avail_out;
+                if(max_out_buf_size<written+have){
+                    throw std::runtime_error(
+                        std::string("cannot write additional ")
+                        + std::to_string(have)
+                        + std::string(" bytes to output buffer with size ")
+                        + std::to_string(max_out_buf_size)
+                        + std::string(" bytes, only ")
+                        + std::to_string(max_out_buf_size-written)
+                        + std::string(" bytes remaining")
+                    );
+                }
                 std::memcpy(out, outbuffer, have);
                 out += have;
+                written += have;
             } while (strm.avail_out == 0);
             to_read -= chunk_size;
         } while (ret != Z_STREAM_END);

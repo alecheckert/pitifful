@@ -18,7 +18,7 @@ We highly recommend other libraries (e.g. `libtiff`) if you're doing anything ot
  - Does not handle tile-oriented layout (only strip-oriented layout)
  - Does not handle BigTIFF (yet)
  - Does not handle other compression types (e.g. LZW)
- - Does not recognize extra metadata present in specialized TIFFs (e.g. OME-TIFF)
+ - Does not parse extra metadata present in specialized TIFFs (e.g. XML or JSON blocks).
  - Cannot write TIFFs
 
 ## Dependencies
